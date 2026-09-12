@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Gerenciador de Finanças</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Fundo — carvão quente, não preto puro */
+    --bg: #0B0A0C;
+    --surface: linear-gradient(160deg, rgba(28, 26, 30, 0.55), rgba(14, 13, 15, 0.75));
+    --surface-hero: linear-gradient(150deg, rgba(36, 30, 30, 0.6) 0%, rgba(20, 18, 24, 0.7) 100%);
+    --surface-sunken: rgba(0, 0, 0, 0.22);
+
+    /* Bordas e halos suaves */
+    --border: rgba(255, 255, 255, 0.07);
+    --border-soft: rgba(255, 255, 255, 0.12);
+    --accent: #9CA8E0;
+    --accent-glow: rgba(156, 168, 224, 0.28);
+
+    /* Textos */
+    --text: #EDEAE6;
+    --text-dim: #A8A29A;
+    --text-faint: #6E6A66;
+
+    /* Categorias — tons naturais e amenos */
+    --essencial: #D9A66C;
+    --essencial-glow: rgba(217, 166, 108, 0.35);
+    --dividas: #D98A82;
+    --dividas-glow: rgba(217, 138, 130, 0.35);
+    --generos: #8FCBA8;
+    --generos-glow: rgba(143, 203, 168, 0.35);
+
+    --radius: 24px;
+    --radius-sm: 14px;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; overflow-x: hidden; width: 100%; touch-action: manipulation; }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: max(20px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) calc(80px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ---------- Fundo Orgânico Colorido ---------- */
+  .organic-bg {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: -1; overflow: hidden; pointer-events: none;
+    background: #0B0A0C;
+  }
+  .blob {
+    position: absolute; border-radius: 50%; filter: blur(90px);
+    opacity: 0.22; animation: drift 42s infinite alternate ease-in-out;
+  }
+  .blob.blue {
+    width: 65vw; height: 65vw; background: radial-gradient(circle, rgba(88, 84, 120, 0.6), transparent 72%);
+    top: -15%; left: -20%;
+  }
+  .blob.red {
+    width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(140, 92, 78, 0.45), transparent 72%);
+    bottom: -15%; right: -20%; animation-delay: -14s;
+  }
+  .blob.teal {
+    width: 48vw; height: 48vw; background: radial-gradient(circle, rgba(70, 100, 88, 0.4), transparent 72%);
+    top: 38%; left: 28%; animation-delay: -28s;
+  }
+
+  @keyframes drift {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(4%, 6%) scale(1.06); }
+    100% { transform: translate(-4%, -3%) scale(0.95); }
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; position: relative; width: 100%; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+  /* ---------- Animações ---------- */
+  @keyframes floatUp {
+    from { opacity: 0; transform: translateY(20px); filter: blur(4px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    flex-direction: column; gap: 14px; margin-bottom: 24px;
+    animation: floatUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @media (min-width: 640px) {
+    header { flex-direction: row; align-items: flex-end; }
+  }
+  
+  .brand h1 {
+    font-size: 23px; font-weight: 700; margin: 0 0 5px; letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .brand p { margin: 0; color: var(--text-dim); font-size: 13px; font-weight: 400; }
+
+  .header-dev {
+    color: #6fb3f2; font-weight: 300; font-size: 15px; letter-spacing: 0.04em;
+    flex: 1; text-align: center; margin: 0;
+  }
+  
+  .month-control {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: linear-gradient(160deg, #1A1719, #0E0C0D);
+    border: 1px solid var(--border);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    border-radius: 999px;
+    padding: 6px 10px 6px 16px;
+    width: 100%;
+  }
+  @media (min-width: 640px) { .month-control { width: auto; } }
+  
+  .month-control label { font-size: 12px; color: var(--text-dim); font-weight: 500; letter-spacing: 0.02em; }
+  .month-control input[type="month"] {
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    border-radius: 999px; color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 16px; padding: 6px 12px; cursor: pointer;
+    box-shadow: inset 1px 1px 4px rgba(0,0,0,0.3);
+  }
+  .month-control input[type="month"]::-webkit-calendar-picker-indicator { filter: invert(0.75) sepia(0.2) saturate(0.6); cursor: pointer; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 24px;
+    animation: floatUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 0.1s;
+  }
+  @media (min-width: 768px) { .hero { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 20px; } }
+
+  .hero-card {
+    background: var(--surface-hero);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(212, 175, 55, 0.55);
+    border-radius: 28px 24px 30px 22px;
+    padding: 22px; position: relative; overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+  .hero-card::after {
+    content: ""; position: absolute; right: -60px; top: -60px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: var(--glow, var(--accent-glow));
+    filter: blur(60px); opacity: 0.45; pointer-events: none;
+    transition: background 0.6s ease;
+  }
+
+  .hero-label { font-size: 12px; color: var(--text-dim); margin: 0 0 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+  .saldo-value {
+    font-family: 'Space Mono', monospace; font-size: clamp(32px, 8vw, 48px);
+    font-weight: 800; line-height: 1.1; letter-spacing: -0.03em;
+    word-break: break-all;
+    position: relative; z-index: 2;
+  }
+  .saldo-value.positivo { color: var(--generos); text-shadow: 0 0 24px var(--generos-glow); }
+  .saldo-value.negativo { color: var(--dividas); text-shadow: 0 0 24px var(--dividas-glow); }
+  .saldo-sub { margin-top: 10px; font-size: 12px; color: var(--text-dim); font-weight: 500; position: relative; z-index: 2; }
+
+  .salario-row { display: flex; align-items: baseline; gap: 8px; position: relative; z-index: 2; }
+  .salario-row span.prefix { font-family: 'Space Mono', monospace; font-size: 20px; color: var(--text-faint); font-weight: 700;}
+  .salario-input {
+    background: transparent; border: none; border-bottom: 2px solid rgba(255,255,255,0.1);
+    color: var(--text); font-family: 'Space Mono', monospace;
+    font-size: 28px; font-weight: 800; padding: 4px 0; width: 100%;
+    transition: all 0.3s ease;
+  }
+  .salario-input:focus { outline: none; border-bottom-color: var(--accent); }
+
+  .receipts-field { margin-top: 20px; position: relative; z-index: 2; }
+  .receipts-field input {
+    width: 100%; background: var(--surface-sunken);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-size: 16px; padding: 12px 14px; font-weight: 500;
+    box-shadow: inset 1px 1px 4px rgba(0,0,0,0.3);
+  }
+  .receipts-field input:focus { outline: none; border-color: var(--accent); }
+
+  /* ---------- Distribution bar ---------- */
+  .dist-bar {
+    display: flex; height: 10px; border-radius: 999px; overflow: hidden;
+    background: var(--surface-sunken); margin-top: 18px;
+    box-shadow: inset 1px 1px 4px rgba(0,0,0,0.4);
+    position: relative; z-index: 2;
+  }
+  .dist-seg { height: 100%; transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+  .dist-legend { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; position: relative; z-index: 2;}
+  .dist-legend span { font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; font-weight: 500; }
+  .dist-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px currentColor; }
+
+  /* ---------- Category grid ---------- */
+  .categories { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; animation: floatUp 1s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 0.2s;}
+  @media (min-width: 900px) { .categories { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } }
+
+  .cat-card {
+    background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(212, 175, 55, 0.55);
+    border-radius: 26px 22px 26px 22px;
+    padding: 22px; display: flex; flex-direction: column; min-height: 280px;
+    box-shadow: 0 8px 26px rgba(0,0,0,0.28);
+    transition: border-color 0.3s ease;
+  }
+  .cat-card:focus-within { border-color: #d4af37; }
+  
+  .cat-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .cat-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
+  .cat-dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+  .cat-pct {
+    font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 600;
+    color: var(--text); padding: 4px 10px; border-radius: 999px;
+    background: var(--surface-sunken); box-shadow: inset 1px 1px 3px rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+  }
+  
+  .cat-progress {
+    height: 6px; border-radius: 999px; background: var(--surface-sunken);
+    margin: 14px 0 18px; overflow: hidden; box-shadow: inset 1px 1px 3px rgba(0,0,0,0.35);
+  }
+  .cat-progress-fill { height: 100%; border-radius: 999px; transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+
+  .items { flex: 1; display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px; }
+  .item-block { display: flex; flex-direction: column; gap: 7px; animation: floatUp 0.3s ease; }
+  .item-row { display: flex; align-items: center; gap: 8px; }
+  .item-row input.desc {
+    flex: 1; background: var(--surface-sunken); border: 1px solid transparent;
+    border-radius: var(--radius-sm); color: var(--text); font-size: 16px; font-weight: 500;
+    padding: 10px 12px; min-width: 0; box-shadow: inset 1px 1px 4px rgba(0,0,0,0.3);
+  }
+  .item-row input.desc:focus { outline: none; border-color: var(--border-soft); }
+  
+  .item-row .val-wrap {
+    display: flex; align-items: center; background: var(--surface-sunken);
+    border-radius: var(--radius-sm); padding: 0 8px; 
+    box-shadow: inset 1px 1px 4px rgba(0,0,0,0.3);
+    border: 1px solid transparent;
+  }
+  .item-row .val-wrap:focus-within { border-color: var(--border-soft); }
+  .item-row .val-wrap span { font-size: 11px; color: var(--text-faint); font-family: 'Space Mono', monospace; font-weight: 700;}
+  .item-row input.val {
+    background: transparent; border: none; color: var(--text);
+    font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700;
+    padding: 10px 2px; width: 84px; text-align: right;
+  }
+  .item-row input.val:focus { outline: none; }
+  
+  /* Botão de Excluir otimizado para toque */
+  .item-row .del-btn {
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    color: var(--text-dim); cursor: pointer; font-size: 17px; font-weight: 400;
+    width: 44px; height: 44px; border-radius: var(--radius-sm); 
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.2s ease, transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  .item-row .del-btn:active { color: var(--dividas); transform: scale(0.95); }
+
+  /* Linha de metadados abaixo da descrição: sub-itens e observação */
+  .item-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-left: 2px; }
+  .meta-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    color: var(--text-dim); cursor: pointer;
+    padding: 7px 11px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif;
+    position: relative; flex-shrink: 0; white-space: nowrap;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  }
+  .meta-btn:active { transform: scale(0.95); }
+  .meta-btn svg { width: 14px; height: 14px; pointer-events: none; flex-shrink: 0; }
+  .meta-btn .meta-count {
+    font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700;
+  }
+  .meta-btn .dot-indicator {
+    width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+    box-shadow: 0 0 6px currentColor; display: none;
+  }
+  .meta-btn.has-value .dot-indicator { display: inline-block; }
+
+  /* Ícone colorido de sub-itens: acende em accent (lilás) quando há sub-itens */
+  .sub-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .sub-btn.has-value {
+    color: var(--accent); border-color: var(--accent-glow);
+    background: rgba(156, 168, 224, 0.1);
+  }
+
+  /* Ícone de observação: acende em tom âmbar quando há texto salvo */
+  .obs-btn:hover { color: var(--essencial); border-color: var(--essencial); }
+  .obs-btn.has-value {
+    color: var(--essencial); border-color: var(--essencial-glow);
+    background: rgba(217, 166, 108, 0.1);
+  }
+
+  /* Ícone de link: acende em verde (gêneros) quando há link salvo */
+  .link-btn:hover { color: var(--generos); border-color: var(--generos); }
+  .link-btn.has-value {
+    color: var(--generos); border-color: var(--generos-glow);
+    background: rgba(143, 203, 168, 0.1);
+  }
+
+  /* Item com valor calculado a partir dos sub-itens */
+  .item-block.has-subitems .val-wrap { border-color: var(--accent-glow); }
+  .item-block.has-subitems input.val { color: var(--accent); cursor: default; }
+
+  /* Textarea da observação */
+  .obs-textarea {
+    width: 100%; min-height: 140px; resize: vertical;
+    background: var(--surface-sunken); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: 'Inter', sans-serif; font-size: 15px; line-height: 1.5;
+    padding: 14px; box-shadow: inset 1px 1px 4px rgba(0,0,0,0.3);
+  }
+  .obs-textarea:focus { outline: none; border-color: var(--essencial); }
+  .obs-textarea::placeholder { color: var(--text-faint); }
+
+  /* Input e botão do pop-up de link */
+  .link-input {
+    width: 100%; background: var(--surface-sunken); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: 'Inter', sans-serif; font-size: 15px;
+    padding: 12px 14px; box-shadow: inset 1px 1px 4px rgba(0,0,0,0.3);
+    margin-bottom: 14px;
+  }
+  .link-input:focus { outline: none; border-color: var(--generos); }
+  .link-input::placeholder { color: var(--text-faint); }
+  .link-access-btn {
+    background: transparent;
+    border: 1px solid var(--generos-glow); color: var(--generos);
+    border-radius: var(--radius-sm); padding: 12px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: 'Inter'; width: 100%;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  }
+  .link-access-btn:hover { background: rgba(143, 203, 168, 0.1); border-color: var(--generos); }
+  .link-access-btn:active { transform: scale(0.97); }
+
+  /* ---------- Sub-itens e Observação: pop-up centralizado ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 3000;
+    background: rgba(4, 4, 6, 0.65);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity 0.28s ease, visibility 0.28s ease;
+  }
+  .modal-overlay.open { opacity: 1; visibility: visible; pointer-events: auto; }
+
+  .modal-sheet {
+    width: 100%; max-width: 460px; max-height: 82vh; overflow-y: auto;
+    background: linear-gradient(160deg, #1A1719, #0E0C0D);
+    border: 1px solid var(--border-soft);
+    border-radius: 26px;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03);
+    padding: 22px 20px calc(20px + env(safe-area-inset-bottom));
+    transform: scale(0.9); opacity: 0;
+    transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease;
+  }
+  .modal-overlay.open .modal-sheet { transform: scale(1); opacity: 1; }
+
+  .modal-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; margin-bottom: 18px;
+  }
+  .modal-eyebrow { margin: 0 0 4px; font-size: 11px; color: var(--text-faint); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+  .modal-title { margin: 0; font-size: 17px; font-weight: 700; color: var(--text); word-break: break-word; }
+  .modal-close {
+    background: transparent; border: none;
+    color: #6fb3f2; font-weight: 300; letter-spacing: 0.02em;
+    height: 36px; padding: 0 4px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; cursor: pointer; flex-shrink: 0; white-space: nowrap;
+    transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+  }
+  .modal-close:hover { opacity: 0.8; }
+  .modal-close:active { color: #3d8fe0; transform: scale(0.96); }
+
+  .modal-body .items { margin-bottom: 14px; }
+  .sub-item-row { animation: floatUp 0.28s ease; }
+
+  .modal-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 14px; border-top: 1px solid var(--border);
+  }
+  .modal-footer .lbl { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+  .modal-footer .tot { font-family: 'Space Mono', monospace; font-size: 17px; font-weight: 700; color: var(--accent); }
+  
+  .add-item-btn {
+    background: transparent;
+    border: 1px solid var(--border-soft); color: var(--text-dim);
+    border-radius: var(--radius-sm); padding: 12px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: 'Inter'; margin-bottom: 16px;
+    transition: color 0.2s ease, border-color 0.2s ease; width: 100%;
+  }
+  .add-item-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  .cat-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid var(--border); }
+  .cat-footer .lbl { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+  .cat-footer .tot { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; }
+
+  .cat-links { margin-top: 14px; }
+  .cat-links input {
+    width: 100%; background: var(--surface-sunken); border: 1px solid transparent;
+    border-radius: var(--radius-sm); color: var(--text-dim); font-size: 16px; padding: 10px 12px;
+    box-shadow: inset 1px 1px 4px rgba(0,0,0,0.3);
+  }
+  .cat-links input:focus { border-color: var(--border-soft); color: var(--text); outline: none; }
+
+  /* ---------- Footer bar ---------- */
+  footer.footer-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 32px; flex-direction: column; gap: 16px;
+    animation: floatUp 1.1s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 0.3s;
+  }
+  @media (min-width: 768px) { footer.footer-bar { flex-direction: row; } }
+
+  .btn-group { display: flex; gap: 10px; flex-wrap: wrap; width: 100%; }
+  @media (min-width: 768px) { .btn-group { width: auto; } }
+  
+  .btn-sec {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim); padding: 12px 16px; border-radius: var(--radius-sm); 
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Inter';
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    flex: 1; text-align: center; transition: transform 0.2s ease;
+  }
+  @media (min-width: 768px) { .btn-sec { flex: unset; } }
+  
+  .btn-sec:active { transform: scale(0.97); }
+  .reset-btn { color: var(--dividas); border-color: var(--dividas-glow); }
+
+  .save-indicator {
+    font-size: 12px; color: var(--text-faint); font-weight: 500;
+    display: flex; align-items: center; gap: 8px; opacity: 0; transition: opacity 0.4s ease;
+    background: rgba(0,0,0,0.4); padding: 6px 14px; border-radius: 999px; backdrop-filter: blur(8px);
+  }
+  .save-indicator.show { opacity: 1; }
+  .save-indicator .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--generos);
+    box-shadow: 0 0 10px var(--generos);
+  }
+
+  /* ---------- Splash Screen ---------- */
+  .splash-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--bg);
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+  }
+  .splash-screen::before {
+    content: ""; position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(88, 84, 120, 0.35), transparent 45%),
+      radial-gradient(circle at 82% 78%, rgba(140, 92, 78, 0.28), transparent 45%),
+      radial-gradient(circle at 60% 30%, rgba(70, 100, 88, 0.22), transparent 40%);
+    filter: blur(60px);
+    animation: drift 10s infinite alternate ease-in-out;
+  }
+  .splash-screen.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  .splash-logo {
+    width: 84px; height: 84px; margin-bottom: 22px; position: relative; z-index: 1;
+    animation: splashPulse 2.2s ease-in-out infinite;
+  }
+  .splash-logo svg { width: 100%; height: 100%; }
+
+  @keyframes splashPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px var(--accent-glow)); }
+    50% { transform: scale(1.06); filter: drop-shadow(0 0 22px var(--accent-glow)); }
+  }
+
+  .splash-title {
+    font-size: 19px; font-weight: 700; letter-spacing: -0.01em; color: var(--text);
+    margin: 0 0 6px; position: relative; z-index: 1;
+  }
+  .splash-sub {
+    font-size: 11px; color: var(--text-faint); font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 30px;
+    position: relative; z-index: 1;
+  }
+
+  .splash-bar {
+    width: 140px; height: 4px; border-radius: 999px; overflow: hidden;
+    background: var(--surface-sunken); box-shadow: inset 1px 1px 3px rgba(0,0,0,0.4);
+    position: relative; z-index: 1;
+  }
+  .splash-bar-fill {
+    height: 100%; width: 40%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--essencial), var(--dividas), var(--generos));
+    animation: splashLoad 1.3s ease-in-out infinite;
+  }
+  @keyframes splashLoad {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(360%); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Splash Screen -->
+<div class="splash-screen" id="splashScreen">
+  <div class="splash-logo">
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="46" stroke="var(--accent)" stroke-width="3" opacity="0.35"/>
+      <path d="M28 62 L28 44" stroke="var(--essencial)" stroke-width="7" stroke-linecap="round"/>
+      <path d="M50 62 L50 32" stroke="var(--generos)" stroke-width="7" stroke-linecap="round"/>
+      <path d="M72 62 L72 50" stroke="var(--dividas)" stroke-width="7" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <p class="splash-title">Gerenciador de Finanças</p>
+  <p class="splash-sub">Carregando seus dados</p>
+  <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+</div>
+
+<!-- Background Orgânico -->
+<div class="organic-bg">
+  <div class="blob blue"></div>
+  <div class="blob red"></div>
+  <div class="blob teal"></div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>Gerenciador de Finanças</h1>
+      <p>Renda, custos essenciais, dívidas e gêneros</p>
+    </div>
+    <p class="header-dev">Tarcizo Developer</p>
+    <div class="month-control">
+      <label for="monthPicker">Mês</label>
+      <input type="month" id="monthPicker" aria-label="Selecione o mês de referência">
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-card" id="saldoCard">
+        <p class="hero-label">Saldo do mês</p>
+        <div class="saldo-value" id="saldoValue">R$ 0,00</div>
+        <p class="saldo-sub" id="saldoSub">Salário menos essenciais, dívidas e gêneros</p>
+        <div class="dist-bar" id="distBar" role="progressbar" aria-label="Distribuição de gastos"></div>
+        <div class="dist-legend">
+          <span><i style="background:var(--essencial); color:var(--essencial)"></i>Essencial <b id="legEssencial" style="color:var(--text)">0%</b></span>
+          <span><i style="background:var(--dividas); color:var(--dividas)"></i>Dívidas <b id="legDividas" style="color:var(--text)">0%</b></span>
+          <span><i style="background:var(--generos); color:var(--generos)"></i>Gêneros <b id="legGeneros" style="color:var(--text)">0%</b></span>
+        </div>
+      </div>
+
+      <div class="hero-card">
+        <label for="salarioInput" class="hero-label">Salário líquido</label>
+        <div class="salario-row">
+          <span class="prefix" aria-hidden="true">R$</span>
+          <input type="text" inputmode="numeric" class="salario-input" id="salarioInput" placeholder="0,00" aria-label="Valor do salário líquido">
+        </div>
+        <div class="receipts-field">
+          <label for="recibosLink" class="sr-only">Link de acesso aos recibos do mês</label>
+          <input type="url" id="recibosLink" placeholder="Link de recibos do mês (opcional)">
+        </div>
+      </div>
+    </section>
+
+    <section class="categories" id="categoriesWrap" aria-label="Categorias de gastos"></section>
+  </main>
+
+  <footer class="footer-bar">
+    <div class="btn-group">
+      <button class="btn-sec reset-btn" id="resetBtn">Limpar</button>
+      <button class="btn-sec" id="exportBtn">Exportar</button>
+      <button class="btn-sec" id="importBtn">Importar</button>
+      <input type="file" id="importFile" accept=".json" style="display:none">
+    </div>
+    <div class="save-indicator" id="saveIndicator" aria-live="polite"><span class="dot"></span> Salvo</div>
+  </footer>
+</div>
+
+<!-- Modal de Sub-itens -->
+<div class="modal-overlay" id="subModalOverlay" role="dialog" aria-modal="true" aria-labelledby="subModalTitle">
+  <div class="modal-sheet" id="subModalSheet">
+    <div class="modal-header">
+      <div>
+        <p class="modal-eyebrow">Sub-itens de</p>
+        <h3 class="modal-title" id="subModalTitle">Descrição</h3>
+      </div>
+      <button class="modal-close" id="subModalClose" aria-label="Salvar e sair">salvar e sair</button>
+    </div>
+    <div class="modal-body">
+      <div class="items" id="subItemsList"></div>
+      <button class="add-item-btn" id="subAddBtn" type="button">+ Adicionar sub-item</button>
+    </div>
+    <div class="modal-footer">
+      <span class="lbl">Total dos sub-itens</span>
+      <span class="tot" id="subModalTotal">R$ 0,00</span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Observação -->
+<div class="modal-overlay" id="obsModalOverlay" role="dialog" aria-modal="true" aria-labelledby="obsModalTitle">
+  <div class="modal-sheet" id="obsModalSheet">
+    <div class="modal-header">
+      <div>
+        <p class="modal-eyebrow">Observação de</p>
+        <h3 class="modal-title" id="obsModalTitle">Descrição</h3>
+      </div>
+      <button class="modal-close" id="obsModalClose" aria-label="Salvar e sair">salvar e sair</button>
+    </div>
+    <div class="modal-body">
+      <textarea class="obs-textarea" id="obsTextarea" placeholder="Escreva uma observação sobre este item..." aria-label="Observação do item"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Link -->
+<div class="modal-overlay" id="linkModalOverlay" role="dialog" aria-modal="true" aria-labelledby="linkModalTitle">
+  <div class="modal-sheet" id="linkModalSheet">
+    <div class="modal-header">
+      <div>
+        <p class="modal-eyebrow">Link de</p>
+        <h3 class="modal-title" id="linkModalTitle">Descrição</h3>
+      </div>
+      <button class="modal-close" id="linkModalClose" aria-label="Salvar e sair">salvar e sair</button>
+    </div>
+    <div class="modal-body">
+      <input class="link-input" type="url" id="linkInput" placeholder="https://" aria-label="URL do link">
+      <button class="link-access-btn" id="linkAccessBtn" type="button">Acessar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'gerenciador_financas_v2';
+
+  // --- Haptics & Web Audio Engine ---
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  let audioCtx;
+  
+  function playHapticFeedback(type = 'soft') {
+    if (navigator.vibrate) {
+      navigator.vibrate(type === 'heavy' ? [15, 30, 15] : 10);
+    }
+    if (!audioCtx) audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    if (type === 'heavy') {
+      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    } else {
+      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+    }
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+  }
+
+  function bindHaptics(element, type = 'soft') {
+    element.addEventListener('mousedown', () => playHapticFeedback(type));
+    element.addEventListener('touchstart', () => playHapticFeedback(type), {passive: true});
+  }
+  // ----------------------------------
+
+  const CATS = [
+    { id:'essencial', title:'Custo essencial', color:'var(--essencial)', glow:'var(--essencial-glow)' },
+    { id:'dividas',   title:'Dívidas',          color:'var(--dividas)',   glow:'var(--dividas-glow)' },
+    { id:'generos',   title:'Gêneros',          color:'var(--generos)',   glow:'var(--generos-glow)' }
+  ];
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function currentMonthKey(){
+    const d = new Date();
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+  }
+  function emptyMonthData(){
+    return {
+      salario: 0, recibos: '',
+      essencial: { link:'', items:[] },
+      dividas:   { link:'', items:[] },
+      generos:   { link:'', items:[] }
+    };
+  }
+
+  function loadStore(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    }catch(e){ return {}; }
+  }
+  function saveStore(store){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    flashSaved();
+  }
+
+  let store = loadStore();
+  let monthKey = currentMonthKey();
+
+  function getMonthData(){
+    if(!store[monthKey]) store[monthKey] = emptyMonthData();
+    return store[monthKey];
+  }
+
+  function fmt(n){
+    return (n||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function parseVal(v){
+    if(typeof v === 'number') return v;
+    if(!v) return 0;
+    const clean = v.toString().replace(/\D/g,'');
+    return clean ? (parseFloat(clean) / 100) : 0;
+  }
+
+  let saveTimeout;
+  function persist(){
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(()=> saveStore(store), 250);
+  }
+
+  let flashTimeout;
+  function flashSaved(){
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show');
+    clearTimeout(flashTimeout);
+    flashTimeout = setTimeout(()=> el.classList.remove('show'), 1400);
+  }
+
+  function uid(){ return Math.random().toString(36).slice(2,9); }
+
+  // Valor de um item: se tiver sub-itens, é a soma deles; senão, o valor manual.
+  function itemValue(item){
+    if(item.subitems && item.subitems.length){
+      return item.subitems.reduce((s,si)=> s + parseVal(si.value), 0);
+    }
+    return parseVal(item.value);
+  }
+
+  function catTotal(catId){
+    const data = getMonthData()[catId];
+    return data.items.reduce((s,i)=> s + itemValue(i), 0);
+  }
+
+  function renderCategories(){
+    const wrap = document.getElementById('categoriesWrap');
+    wrap.innerHTML = '';
+    const data = getMonthData();
+    const salario = parseVal(data.salario) || 1;
+
+    CATS.forEach(cat => {
+      const catData = data[cat.id];
+      const total = catTotal(cat.id);
+      const pct = salario > 0 ? (total/salario*100) : 0;
+
+      const card = document.createElement('article');
+      card.className = 'cat-card';
+      card.innerHTML = `
+        <div class="cat-head">
+          <h2 class="cat-title" style="color:${cat.color}; text-shadow: 0 0 10px ${cat.glow}"><span class="cat-dot" style="background:${cat.color}"></span>${cat.title}</h2>
+          <span class="cat-pct" id="pct-${cat.id}">${pct.toFixed(1)}%</span>
+        </div>
+        <div class="cat-progress"><div class="cat-progress-fill" id="fill-${cat.id}" style="background:${cat.color}; width:${Math.min(pct,100)}%"></div></div>
+        <div class="items" id="items-${cat.id}"></div>
+        <button class="add-item-btn" data-cat="${cat.id}">+ Adicionar item</button>
+        <div class="cat-footer">
+          <span class="lbl">Total</span>
+          <span class="tot" id="total-${cat.id}" style="color:${cat.color}">R$ ${fmt(total)}</span>
+        </div>
+        <div class="cat-links">
+          <label for="link-${cat.id}" class="sr-only">Link de recibos para ${cat.title}</label>
+          <input type="url" id="link-${cat.id}" data-cat-link="${cat.id}" placeholder="Link de recibos (opcional)" value="${catData.link || ''}">
+        </div>
+      `;
+      wrap.appendChild(card);
+      
+      const btnAdd = card.querySelector('.add-item-btn');
+      bindHaptics(btnAdd);
+
+      const itemsEl = card.querySelector(`#items-${cat.id}`);
+      catData.items.forEach(item => itemsEl.appendChild(renderItemRow(cat.id, item)));
+
+      btnAdd.addEventListener('click', () => {
+        const item = { id:uid(), desc:'', value:0 };
+        catData.items.push(item);
+        itemsEl.appendChild(renderItemRow(cat.id, item));
+        persist();
+      });
+
+      card.querySelector(`[data-cat-link="${cat.id}"]`).addEventListener('input', (e) => {
+        catData.link = e.target.value;
+        persist();
+      });
+    });
+
+    updateTotalsUI();
+  }
+
+  const subListIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="6" rx="1.5"></rect><rect x="4" y="14" width="16" height="6" rx="1.5"></rect></svg>`;
+  const obsIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>`;
+  const linkIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`;
+
+  function renderItemRow(catId, item){
+    const row = document.createElement('div');
+    row.className = 'item-block';
+    row.innerHTML = `
+      <div class="item-row">
+        <input class="desc" type="text" placeholder="Descrição" value="${item.desc || ''}" aria-label="Descrição do item">
+        <div class="val-wrap">
+          <span aria-hidden="true">R$</span>
+          <input class="val" type="text" inputmode="numeric" value="${item.value ? fmt(item.value) : ''}" placeholder="0,00" aria-label="Valor do item em Reais">
+        </div>
+        <button class="del-btn" title="Remover item" aria-label="Remover item">×</button>
+      </div>
+      <div class="item-meta">
+        <button class="meta-btn sub-btn" type="button" title="Sub-itens" aria-label="Abrir sub-itens desta descrição">
+          ${subListIcon}
+          <span>Sub-itens</span>
+          <span class="meta-count"></span>
+        </button>
+        <button class="meta-btn obs-btn" type="button" title="Observação" aria-label="Adicionar observação a este item">
+          ${obsIcon}
+          <span>Observação</span>
+          <span class="dot-indicator"></span>
+        </button>
+        <button class="meta-btn link-btn" type="button" title="Link" aria-label="Adicionar link a este item">
+          ${linkIcon}
+          <span>Link</span>
+          <span class="dot-indicator"></span>
+        </button>
+      </div>
+    `;
+
+    const descInput = row.querySelector('.desc');
+    const valInput = row.querySelector('.val');
+    const delBtn = row.querySelector('.del-btn');
+    const subBtn = row.querySelector('.sub-btn');
+    const subCount = row.querySelector('.sub-btn .meta-count');
+    const obsBtn = row.querySelector('.obs-btn');
+    const linkBtn = row.querySelector('.link-btn');
+
+    function syncValDisplay(){
+      const hasSub = !!(item.subitems && item.subitems.length);
+      row.classList.toggle('has-subitems', hasSub);
+      subBtn.classList.toggle('has-value', hasSub);
+      valInput.readOnly = hasSub;
+      const v = itemValue(item);
+      valInput.value = v ? fmt(v) : '';
+      subCount.textContent = hasSub ? item.subitems.length : '';
+    }
+    syncValDisplay();
+
+    function syncObsDisplay(){
+      const hasObs = !!(item.obs && item.obs.trim());
+      obsBtn.classList.toggle('has-value', hasObs);
+    }
+    syncObsDisplay();
+
+    function syncLinkDisplay(){
+      const hasLink = !!(item.link && item.link.trim());
+      linkBtn.classList.toggle('has-value', hasLink);
+    }
+    syncLinkDisplay();
+
+    bindHaptics(delBtn, 'heavy');
+    bindHaptics(subBtn);
+    bindHaptics(obsBtn);
+    bindHaptics(linkBtn);
+
+    descInput.addEventListener('input', (e) => {
+      item.desc = e.target.value;
+      if(subModalItem === item){ subModalTitle.textContent = item.desc.trim() || 'Sem descrição'; }
+      if(obsModalItem === item){ obsModalTitle.textContent = item.desc.trim() || 'Sem descrição'; }
+      persist();
+    });
+
+    valInput.addEventListener('input', (e) => {
+      if(item.subitems && item.subitems.length) return;
+      item.value = parseVal(e.target.value);
+      e.target.value = item.value ? fmt(item.value) : '';
+      updateTotalsUI();
+      persist();
+    });
+
+    delBtn.addEventListener('click', () => {
+      row.style.opacity = '0';
+      row.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        const data = getMonthData()[catId];
+        data.items = data.items.filter(i => i.id !== item.id);
+        row.remove();
+        updateTotalsUI();
+        persist();
+      }, 200);
+    });
+
+    subBtn.addEventListener('click', () => {
+      openSubModal(item, () => {
+        syncValDisplay();
+        updateTotalsUI();
+        persist();
+      });
+    });
+
+    obsBtn.addEventListener('click', () => {
+      openObsModal(item, () => {
+        syncObsDisplay();
+        persist();
+      });
+    });
+
+    linkBtn.addEventListener('click', () => {
+      openLinkModal(item, () => {
+        syncLinkDisplay();
+        persist();
+      });
+    });
+
+    return row;
+  }
+
+  // ---------- Modal de Sub-itens ----------
+  const subModalOverlay = document.getElementById('subModalOverlay');
+  const subModalSheet = document.getElementById('subModalSheet');
+  const subModalTitle = document.getElementById('subModalTitle');
+  const subItemsList = document.getElementById('subItemsList');
+  const subAddBtn = document.getElementById('subAddBtn');
+  const subModalClose = document.getElementById('subModalClose');
+  const subModalTotal = document.getElementById('subModalTotal');
+
+  let subModalItem = null;
+  let subModalOnChange = null;
+
+  function updateSubModalTotal(){
+    const total = subModalItem ? subModalItem.subitems.reduce((s,si)=> s + parseVal(si.value), 0) : 0;
+    subModalTotal.textContent = `R$ ${fmt(total)}`;
+  }
+
+  function renderSubItemRow(subitem){
+    const row = document.createElement('div');
+    row.className = 'item-row sub-item-row';
+    row.innerHTML = `
+      <input class="desc" type="text" placeholder="Descrição do sub-item" value="${subitem.desc || ''}" aria-label="Descrição do sub-item">
+      <div class="val-wrap">
+        <span aria-hidden="true">R$</span>
+        <input class="val" type="text" inputmode="numeric" value="${subitem.value ? fmt(subitem.value) : ''}" placeholder="0,00" aria-label="Valor do sub-item em Reais">
+      </div>
+      <button class="del-btn" title="Remover sub-item" aria-label="Remover sub-item">×</button>
+    `;
+
+    const descInput = row.querySelector('.desc');
+    const valInput = row.querySelector('.val');
+    const delBtn = row.querySelector('.del-btn');
+    bindHaptics(delBtn, 'heavy');
+
+    descInput.addEventListener('input', (e) => {
+      subitem.desc = e.target.value;
+      if(subModalOnChange) subModalOnChange();
+    });
+
+    valInput.addEventListener('input', (e) => {
+      subitem.value = parseVal(e.target.value);
+      e.target.value = subitem.value ? fmt(subitem.value) : '';
+      updateSubModalTotal();
+      if(subModalOnChange) subModalOnChange();
+    });
+
+    delBtn.addEventListener('click', () => {
+      row.style.opacity = '0';
+      row.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        subModalItem.subitems = subModalItem.subitems.filter(s => s.id !== subitem.id);
+        row.remove();
+        updateSubModalTotal();
+        if(subModalOnChange) subModalOnChange();
+      }, 200);
+    });
+
+    return row;
+  }
+
+  function renderSubItemsList(){
+    subItemsList.innerHTML = '';
+    subModalItem.subitems.forEach(si => subItemsList.appendChild(renderSubItemRow(si)));
+    updateSubModalTotal();
+  }
+
+  function openSubModal(item, onChange){
+    if(!item.subitems) item.subitems = [];
+    subModalItem = item;
+    subModalOnChange = onChange;
+    subModalTitle.textContent = (item.desc || '').trim() || 'Sem descrição';
+    renderSubItemsList();
+    document.body.style.overflow = 'hidden';
+    subModalOverlay.classList.add('open');
+  }
+
+  function closeSubModal(){
+    subModalOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+    setTimeout(() => {
+      subItemsList.innerHTML = '';
+      subModalItem = null;
+      subModalOnChange = null;
+    }, 350);
+  }
+
+  subAddBtn.addEventListener('click', () => {
+    if(!subModalItem) return;
+    const si = { id: uid(), desc:'', value:0 };
+    subModalItem.subitems.push(si);
+    subItemsList.appendChild(renderSubItemRow(si));
+    updateSubModalTotal();
+    if(subModalOnChange) subModalOnChange();
+  });
+  bindHaptics(subAddBtn);
+
+  subModalClose.addEventListener('click', closeSubModal);
+  subModalOverlay.addEventListener('click', (e) => {
+    if(e.target === subModalOverlay) closeSubModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && subModalOverlay.classList.contains('open')) closeSubModal();
+  });
+  // -----------------------------------------
+
+  // ---------- Modal de Observação ----------
+  const obsModalOverlay = document.getElementById('obsModalOverlay');
+  const obsModalTitle = document.getElementById('obsModalTitle');
+  const obsTextarea = document.getElementById('obsTextarea');
+  const obsModalClose = document.getElementById('obsModalClose');
+
+  let obsModalItem = null;
+  let obsModalOnChange = null;
+
+  function openObsModal(item, onChange){
+    obsModalItem = item;
+    obsModalOnChange = onChange;
+    obsModalTitle.textContent = (item.desc || '').trim() || 'Sem descrição';
+    obsTextarea.value = item.obs || '';
+    document.body.style.overflow = 'hidden';
+    obsModalOverlay.classList.add('open');
+    setTimeout(() => obsTextarea.focus(), 300);
+  }
+
+  function closeObsModal(){
+    obsModalOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+    setTimeout(() => {
+      obsModalItem = null;
+      obsModalOnChange = null;
+    }, 350);
+  }
+
+  obsTextarea.addEventListener('input', (e) => {
+    if(!obsModalItem) return;
+    obsModalItem.obs = e.target.value;
+    if(obsModalOnChange) obsModalOnChange();
+  });
+
+  obsModalClose.addEventListener('click', closeObsModal);
+  obsModalOverlay.addEventListener('click', (e) => {
+    if(e.target === obsModalOverlay) closeObsModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && obsModalOverlay.classList.contains('open')) closeObsModal();
+  });
+  // -----------------------------------------
+
+  // ---------- Modal de Link ----------
+  const linkModalOverlay = document.getElementById('linkModalOverlay');
+  const linkModalTitle = document.getElementById('linkModalTitle');
+  const linkInput = document.getElementById('linkInput');
+  const linkModalClose = document.getElementById('linkModalClose');
+  const linkAccessBtn = document.getElementById('linkAccessBtn');
+
+  let linkModalItem = null;
+  let linkModalOnChange = null;
+
+  function openLinkModal(item, onChange){
+    linkModalItem = item;
+    linkModalOnChange = onChange;
+    linkModalTitle.textContent = (item.desc || '').trim() || 'Sem descrição';
+    linkInput.value = item.link || '';
+    document.body.style.overflow = 'hidden';
+    linkModalOverlay.classList.add('open');
+    setTimeout(() => linkInput.focus(), 300);
+  }
+
+  function closeLinkModal(){
+    linkModalOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+    setTimeout(() => {
+      linkModalItem = null;
+      linkModalOnChange = null;
+    }, 350);
+  }
+
+  linkInput.addEventListener('input', (e) => {
+    if(!linkModalItem) return;
+    linkModalItem.link = e.target.value;
+    if(linkModalOnChange) linkModalOnChange();
+  });
+
+  linkAccessBtn.addEventListener('click', () => {
+    const url = (linkInput.value || '').trim();
+    if(!url) return;
+    const href = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    window.open(href, '_blank', 'noopener,noreferrer');
+  });
+
+  linkModalClose.addEventListener('click', closeLinkModal);
+  linkModalOverlay.addEventListener('click', (e) => {
+    if(e.target === linkModalOverlay) closeLinkModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && linkModalOverlay.classList.contains('open')) closeLinkModal();
+  });
+  // -----------------------------------------
+
+  function updateTotalsUI(){
+    const data = getMonthData();
+    const salario = parseVal(data.salario);
+    const totals = {};
+    CATS.forEach(cat => totals[cat.id] = catTotal(cat.id));
+    const gastos = totals.essencial + totals.dividas + totals.generos;
+    const saldo = salario - gastos;
+
+    CATS.forEach(cat => {
+      const pct = salario > 0 ? (totals[cat.id]/salario*100) : 0;
+      const totalEl = document.getElementById(`total-${cat.id}`);
+      const pctEl = document.getElementById(`pct-${cat.id}`);
+      const fillEl = document.getElementById(`fill-${cat.id}`);
+      if(totalEl) totalEl.textContent = `R$ ${fmt(totals[cat.id])}`;
+      if(pctEl) pctEl.textContent = `${pct.toFixed(1)}%`;
+      if(fillEl) fillEl.style.width = `${Math.min(pct,100)}%`;
+    });
+
+    const saldoEl = document.getElementById('saldoValue');
+    saldoEl.textContent = `R$ ${fmt(saldo)}`;
+    
+    saldoEl.classList.remove('positivo', 'negativo');
+    saldoEl.classList.add(saldo >= 0 ? 'positivo' : 'negativo');
+    
+    document.getElementById('saldoCard').style.setProperty('--glow', saldo >= 0 ? 'rgba(143, 203, 168, 0.22)' : 'rgba(217, 138, 130, 0.22)');
+
+    const distBar = document.getElementById('distBar');
+    distBar.innerHTML = '';
+    const base = salario > 0 ? salario : (gastos || 1);
+    const segs = [
+      { val: totals.essencial, color: 'var(--essencial)' },
+      { val: totals.dividas, color: 'var(--dividas)' },
+      { val: totals.generos, color: 'var(--generos)' },
+    ];
+    segs.forEach(s => {
+      const seg = document.createElement('div');
+      seg.className = 'dist-seg';
+      seg.style.width = `${Math.min((s.val/base)*100, 100)}%`;
+      seg.style.background = s.color;
+      distBar.appendChild(seg);
+    });
+
+    document.getElementById('legEssencial').textContent = `${(salario>0?totals.essencial/salario*100:0).toFixed(0)}%`;
+    document.getElementById('legDividas').textContent = `${(salario>0?totals.dividas/salario*100:0).toFixed(0)}%`;
+    document.getElementById('legGeneros').textContent = `${(salario>0?totals.generos/salario*100:0).toFixed(0)}%`;
+  }
+
+  function renderAll(){
+    const data = getMonthData();
+    document.getElementById('salarioInput').value = data.salario ? fmt(data.salario) : '';
+    document.getElementById('recibosLink').value = data.recibos || '';
+    renderCategories();
+    
+    document.querySelectorAll('.btn-sec').forEach(btn => bindHaptics(btn));
+    bindHaptics(document.getElementById('monthPicker'));
+  }
+
+  const monthPicker = document.getElementById('monthPicker');
+  monthPicker.value = monthKey;
+  monthPicker.addEventListener('change', (e) => {
+    monthKey = e.target.value || currentMonthKey();
+    renderAll();
+    persist();
+  });
+
+  const salarioInput = document.getElementById('salarioInput');
+  salarioInput.addEventListener('input', (e) => {
+    getMonthData().salario = parseVal(e.target.value);
+    e.target.value = getMonthData().salario ? fmt(getMonthData().salario) : '';
+    updateTotalsUI();
+    persist();
+  });
+
+  document.getElementById('recibosLink').addEventListener('input', (e) => {
+    getMonthData().recibos = e.target.value;
+    persist();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if(confirm('Tem certeza de que deseja apagar todos os dados deste mês?')){
+      store[monthKey] = emptyMonthData();
+      renderAll();
+      persist();
+    }
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(store, null, 2));
+    const dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", `financas_backup_${currentMonthKey()}.json`);
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
+  });
+
+  const importBtn = document.getElementById('importBtn');
+  const importFile = document.getElementById('importFile');
+  importBtn.addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        store = JSON.parse(evt.target.result);
+        saveStore(store);
+        renderAll();
+        alert('Dados importados com sucesso!');
+      } catch (err) {
+        alert('Erro ao ler arquivo JSON.');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  renderAll();
+
+  const splash = document.getElementById('splashScreen');
+  if (splash) {
+    setTimeout(() => {
+      splash.classList.add('hide');
+      setTimeout(() => splash.remove(), 650);
+    }, 850);
+  }
+})();
+</script>
+</body>
+</html>
